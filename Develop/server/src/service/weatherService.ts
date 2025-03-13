@@ -8,16 +8,18 @@ interface Coordinates {
 }
 // TODO: Define a class for the Weather object
 class Weather {
-  city: string;
-  temp: string;
+  cityName: string;
+  date: string;
+  tempF: string;
   description: string;
   icon: string;
   windSpeed: string;
   humidity: string;
 
-  constructor(city: string, temp: string, description: string, icon: string, windSpeed: string, humidity: string) {
-    this.city = city;
-    this.temp = temp;
+  constructor(cityName: string, date: string, tempF: string, description: string, icon: string, windSpeed: string, humidity: string) {
+    this.cityName = cityName;
+    this.date = date;
+    this.tempF = tempF;
     this.description = description; 
     this.icon = icon;
     this.windSpeed = windSpeed;
@@ -66,15 +68,14 @@ class WeatherService {
 
   // TODO: Create buildWeatherQuery method
   private buildWeatherQuery(coordinates: Coordinates): string {
-    return `${this.baseUrl}/data/2.5/onecall?lat=${coordinates.lat}&lon=${coordinates.lon}&appid=${this.apiKey}`;
+    return `${this.baseUrl}/data/2.5/forecast?lat=${coordinates.lat}&lon=${coordinates.lon}&units=imperial&appid=${this.apiKey}`;
   }
 
   // TODO: Create fetchAndDestructureLocationData method
   private async fetchAndDestructureLocationData() {
     const geocodeQuery = this.buildGeocodeQuery();
     const locationData = await this.fetchLocationData(geocodeQuery);
-    // const locationDataJson = await locationData.json();
-    return this.destructureLocationData(locationData);
+    return this.destructureLocationData(locationData[0]);
   }
 
   // TODO: Create fetchWeatherData method
@@ -82,6 +83,7 @@ class WeatherService {
     try {
       const query = this.buildWeatherQuery(coordinates);
       const response = await fetch(query);
+      console.log('response:', response);
       if (response.ok) {
         const data = await response.json();
         return data;
@@ -95,9 +97,11 @@ class WeatherService {
 
     // TODO: Complete buildForecastArray method
     private parseCurrentWeather(response: any) {
-
+      // console.log('response:', response);
+      const formattedDate = new Date(response.dt_txt).toLocaleDateString('en-US', {});
         const currentWeather = new Weather(
           this.cityName,
+          formattedDate,
           response.main.temp,
           response.weather[0].description,
           response.weather[0].icon,
@@ -115,8 +119,11 @@ class WeatherService {
     for (let i = 0; i < weatherData.length; i++) {
       const element = weatherData[i];
 
+      if(element.dt_txt.endsWith('12:00:00')) { 
+        const formattedDate = new Date(element.dt_txt).toLocaleDateString('en-US', {});
       const currentWeather = new Weather(
         this.cityName,
+        formattedDate,
         element.main.temp,
         element.weather[0].description,
         element.weather[0].icon,
@@ -124,7 +131,7 @@ class WeatherService {
         element.main.humidity
       )
       forecastArray.push(currentWeather)
-      
+    }
     }
   
     return forecastArray;
@@ -139,11 +146,12 @@ class WeatherService {
     this.cityName = city;
 
     const coordinates = await this.fetchAndDestructureLocationData();
-  
+ 
     const weatherData = await this.fetchWeatherData(coordinates);
+  
 
-    const currentWeather = this.parseCurrentWeather(weatherData.current);
-    const forecastArray = this.buildForecastArray(currentWeather, weatherData.daily);
+    const currentWeather = this.parseCurrentWeather(weatherData.list[0]);
+    const forecastArray = this.buildForecastArray(currentWeather, weatherData.list);
 
     return forecastArray
   }

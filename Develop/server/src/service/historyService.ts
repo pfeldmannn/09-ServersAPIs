@@ -1,5 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
+import { fileURLToPath } from 'url';
+import path from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 import fs from 'fs';
+
 // DONE: Define a City class with name and id properties
 class City {
   name: string;
@@ -15,12 +21,12 @@ class HistoryService {
 
   // DONE: Define a read method that reads from the searchHistory.json file
   private async read() {
-    return await fs.readFileSync('searchHistory.json', 'utf8');
+    return await fs.readFileSync(path.join(__dirname, '../../db/searchHistory.json'), 'utf8');
   }
 
   // DONE: Define a write method that writes the updated cities array to the searchHistory.json file
   private async write(cities: City[]) {
-    return await fs.writeFileSync('searchHistory.json', JSON.stringify(cities, null, '\t'));
+    return await fs.writeFileSync(path.join(__dirname, '../../db/searchHistory.json'), JSON.stringify(cities, null, '\t'));
   }
 
   // DONE: Define a getCities method that reads the cities from the searchHistory.json file and returns them as an array of City objects
@@ -39,6 +45,7 @@ class HistoryService {
 
   // DONE: Define an addCity method that adds a city to the searchHistory.json file
   async addCity(city: string) {
+
     if (!city) {
       throw new Error('city name is required');
     }
